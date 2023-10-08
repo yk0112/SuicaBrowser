@@ -3,3 +3,4 @@ compile_commands.json
 _commands.json
 .git
 .cache
+.clang-format
