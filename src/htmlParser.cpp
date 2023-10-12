@@ -1,57 +1,42 @@
 #include "./htmlParser.hpp"
-
 #include <boost/spirit/include/qi.hpp>
 #include <iostream>
 #include <string>
 
-namespace qi = boost::spirit::qi;
-
-std::tuple<std::string, std::string> parse_attribute(std::string input) {
+std::tuple<std::string, std::string> TagParser::parse_attribute(std::string input) {
     auto begin = input.begin();
     auto end = input.end();
     std::string attributeName;
     std::string attributeValue;
 
-    qi::rule<std::string::iterator, std::string()> attributeNameRule =
-        +(qi::char_ - "=" - qi::space);
-    qi::rule<std::string::iterator, std::string()> attributeValueRule =
-        qi::lexeme['"' >> *(qi::char_ - '"') >> '"'];
-
     bool success = qi::phrase_parse(begin,
                                     end,
-                                    attributeNameRule >> qi::lit("=") >> attributeValueRule,
+                                    attributeNameRule >> qi::lit("=") >> parseValueRule,
                                     qi::space,
                                     attributeName,
                                     attributeValue);
 
     if (success && begin == end) {
         return std::make_tuple(attributeName, attributeValue);
-        // return std::make_tuple("test","foo bar");
     }
 
-    std::cout << "fail to parse attribute \n";
-    exit(0);
+    throw std::runtime_error("fail to parse_attribute");
 }
 
-AttrMap attributes(std::string input) {
+AttrMap TagParser::parse_attributes(std::string input) {
     auto begin = input.begin();
     auto end = input.end();
 
+    std::cout << input << "\n";
     std::vector<std::string> attributes;
     AttrMap result;
-
-    qi::rule<std::string::iterator, std::string()> attributeNameRule = +(qi::char_ - '=');
-    qi::rule<std::string::iterator, std::string()> attributeValueRule =
-        qi::lexeme[qi::char_('"') >> *(qi::char_ - '"') >> qi::char_('"')];
-
-    qi::rule<std::string::iterator, std::string()> attributePair =
-        attributeNameRule >> qi::char_("=") >> *qi::space >> attributeValueRule;
 
     if (input.empty()) {
         return result;
     }
 
-    bool success = qi::parse(begin, end, attributePair % " ", attributes);
+    bool success =
+        qi::phrase_parse(begin, end, attributeRule % *qi::char_(' '), qi::space, attributes);
 
     if (success && begin == end) {
         for (auto &attr : attributes) {
@@ -62,6 +47,28 @@ AttrMap attributes(std::string input) {
         return result;
     }
 
-    std::cout << "fail to attributes \n";
-    exit(0);
+    throw std::runtime_error("fail to parse_attributes");
 }
+
+std::pair<std::string, AttrMap> TagParser::open_tag(std::string input) {
+    auto begin = input.begin();
+    auto end = input.end();
+
+    std::string tagName;
+    std::string attributes;
+
+    bool success = qi::parse(begin,
+                             end,
+                             '<' >> tagNameRule >> *qi::lit(' ') >>
+                                 (tagAttributesRule | qi::attr("")) >> '>' >> *qi::char_,
+                             tagName,
+                             attributes);
+
+    if (success && begin == end) {
+        auto attrs_map = parse_attributes(attributes);
+        return std::make_pair(tagName, attrs_map);
+    }
+
+    throw std::runtime_error("fail to open_tag");
+}
+
