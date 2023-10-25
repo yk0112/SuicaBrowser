@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include <vector>
 
+namespace html {
+
 using AttrMap = std::unordered_map<std::string, std::string>;
 
 enum class NodeType { Element, Text };
@@ -13,45 +15,31 @@ struct Text {
     std::string data;
 };
 
-struct Node {
-    NodeType node_type;
-    std::vector<std::unique_ptr<Node>> children;
-};
+struct Element;
+
+using Node = std::variant<std::string, Element>;
 
 struct Element {
     std::string tag_name;
     AttrMap attributes;
+    std::vector<Node> children;
+
+    Element(const std::string &tag, const AttrMap &attrs, const std::vector<Node> &kids)
+        : tag_name{tag}, attributes{attrs}, children{kids} {}
 };
 
-namespace qi = boost::spirit::qi;
+std::tuple<std::string, std::string> parse_attribute(std::string input);
 
-class TagParser {
-  public:
-    TagParser() {
-        parseValueRule = '"' >> *(qi::char_ - '"') >> '"';
-        attributeNameRule = +(qi::char_ - '=' - ' ');
-        attributeValueRule = qi::char_('"') >> *(qi::char_ - '"') >> qi::char_('"');
+AttrMap parse_attributes(std::string input);
 
-        attributeRule =
-            attributeNameRule >> *qi::space >> qi::char_("=") >> *qi::space >> attributeValueRule;
+std::tuple<std::string, AttrMap> open_tag(std::string::iterator &begin, std::string::iterator &end);
 
-        tagNameRule = +(qi::char_ - ' ' - '>');
-        tagAttributesRule = +(qi::char_ - '>');
-    }
+std::string close_tag(std::string::iterator &begin, std::string::iterator &end);
 
-    std::tuple<std::string, std::string> parse_attribute(std::string input);
+std::string parse_text(std::string::iterator &begin, std::string::iterator &end);
 
-    AttrMap parse_attributes(std::string input);
+Element parse_element(std::string::iterator &begin, std::string::iterator &end);
 
-    std::pair<std::string, AttrMap> open_tag(std::string input);
+std::vector<Node> nodes(std::string::iterator &begin, std::string::iterator &end);
 
-  private:
-    qi::rule<std::string::iterator, std::string()> parseValueRule;
-    qi::rule<std::string::iterator, std::string()> attributeNameRule;
-    qi::rule<std::string::iterator, std::string()> attributeValueRule;
-    qi::rule<std::string::iterator, std::string()> attributeRule;
-    qi::rule<std::string::iterator, std::string()> tagNameRule;
-    qi::rule<std::string::iterator, std::string()> tagAttributesRule;
-    qi::rule<std::string::iterator, std::string()> tagRule;
-};
-
+} // namespace html
