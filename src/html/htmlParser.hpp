@@ -9,8 +9,6 @@ namespace html {
 
 using AttrMap = std::unordered_map<std::string, std::string>;
 
-enum class NodeType { Element, Text };
-
 struct Text {
     std::string data;
 };

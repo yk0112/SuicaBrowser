@@ -1,5 +1,5 @@
 #define CATCH_CONFIG_MAIN
-#include "../src/htmlParser.hpp"
+#include "../src/html/htmlParser.hpp"
 #include <catch2/catch_all.hpp>
 
 //////////// CUSTOM MATCHR //////////////
