@@ -1,4 +1,3 @@
-#include <boost/spirit/include/qi.hpp>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -7,9 +6,8 @@
 
 namespace css {
 
-// Enumeration for AttributeSelectorOp
 enum class AttributeSelectorOp {
-    Eq,      // =
+    eq,      // =
     Contain, // ~=
 };
 
@@ -30,7 +28,19 @@ struct ClassSelector {
     std::string class_name;
 };
 
-using Selector = std::variant<UniversalSelector, TypeSelector, AttributeSelector, ClassSelector>;
+enum class Type {
+    UniversalSelector,
+    ClassSelector,
+    TypeSelector,
+    AttributeSelector,
+};
+
+using Content = std::variant<UniversalSelector, TypeSelector, AttributeSelector, ClassSelector>;
+
+struct Selector {
+    Type type;
+    Content content;
+};
 
 struct Declaration {
     std::string name;
@@ -46,6 +56,16 @@ struct Stylesheet {
     std::vector<CSSRule> rules;
 };
 
+Selector cap_univ(std::string s);
+
+Selector cap_class(std::string s);
+
+Selector cap_type(std::string s);
+
+Selector cap_attr(std::string s1, std::string s2, std::string s3, std::string s4);
+
 std::vector<Declaration> declarations(std::string input);
+
+std::vector<Selector> selectors(std::string input);
 
 } // namespace css
