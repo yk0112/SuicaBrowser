@@ -18,6 +18,7 @@ Rule nameRule = +(qi::char_ - ':');
 Rule valueRule = +(qi::char_ - ';');
 Rule declarationRule = nameRule >> qi::char_(':') >> valueRule;
 Rule selectorRule = +(qi::char_ - ',');
+Rule opRule = qi::string("~=") | qi::char_('=');
 
 Rule2 universalRule = qi::as_string[qi::char_('*')][qi::_val = capUniv(qi::_1)];
 
@@ -25,11 +26,11 @@ Rule2 classRule = qi::lit('.') >> qi::as_string[+qi::char_][qi::_val = capClass(
 
 Rule2 typeRule = qi::as_string[*(qi::char_)][qi::_val = capType(qi::_1)];
 
-Rule2 attributeRule = (qi::as_string[*(qi::char_ - '[' - ' ')] >> *qi::lit(' ') >> '[' >>
-                       qi::as_string[*(qi::char_ - (qi::char_("~=") | '=') - ' ')] >>
-                       *qi::lit(' ') >> qi::as_string[qi::char_("~=") | qi::char_('=')] >>
-                       *qi::lit(' ') >> qi::as_string[*(qi::char_ - ']' - ' ')] >> *qi::lit(' ') >>
-                       ']')[qi::_val = capAttr(qi::_1, qi::_2, qi::_3, qi::_4)];
+Rule2 attributeRule =
+    (qi::as_string[*(qi::char_ - '[' - ' ')] >> *qi::lit(' ') >> '[' >>
+     qi::as_string[*(qi::char_ - opRule - ' ')] >> *qi::lit(' ') >> qi::as_string[opRule] >>
+     *qi::lit(' ') >> qi::as_string[*(qi::char_ - ']' - ' ')] >> *qi::lit(' ') >>
+     ']')[qi::_val = capAttr(qi::_1, qi::_2, qi::_3, qi::_4)];
 
 Rule2 selectorsRule = universalRule | classRule | attributeRule | typeRule;
 
@@ -103,10 +104,31 @@ std::vector<Selector> selectors(std::string input) {
 
     bool sucsess = qi::phrase_parse(begin, end, selectorsRule % ',', qi::space, result);
 
-    if (sucsess && begin == end)
+    if (sucsess && begin == end) {
         return result;
+    }
 
     throw std::runtime_error("fail to selectors");
+}
+
+CSSRule parse_rule(std::string input) {
+    auto begin = input.begin();
+    auto end = input.end();
+
+    std::string decls{};
+    std::string selecs{};
+
+    bool sucsess = qi::phrase_parse(begin,
+                                    end,
+                                    +(qi::char_ - '{') >> '{' >> *(qi::char_ - '}') >> '}',
+                                    qi::space,
+                                    selecs,
+                                    decls);
+
+    if (sucsess && begin == end) {
+        return CSSRule{selectors(selecs), declarations(decls)};
+    }
+    throw std::runtime_error("fail to rule");
 }
 
 } // namespace css

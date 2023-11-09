@@ -68,4 +68,6 @@ std::vector<Declaration> declarations(std::string input);
 
 std::vector<Selector> selectors(std::string input);
 
+CSSRule parse_rule(std::string input);
+
 } // namespace css
