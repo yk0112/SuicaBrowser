@@ -54,9 +54,9 @@ struct SelectorMatcher : Catch::Matchers::MatcherGenericBase {
             auto content2 = std::get<2>(expected_.content);
 
             if (content1.tag_name == content2.tag_name && content1.op == content2.op &&
-                content1.attribute == content2.attribute && content1.value == content2.value)
+                content1.attribute == content2.attribute && content1.value == content2.value) {
                 return true;
-            else
+            } else
                 return false;
         }
         case Type::ClassSelector:
@@ -108,6 +108,10 @@ TEST_CASE("declarations", "[declarations]") {
     auto result1 = declarations("foo : bar; piyo : piyopiyo;");
     std::vector<Declaration> expected{Declaration{"foo", "bar"}, Declaration{"piyo", "piyopiyo"}};
     REQUIRE_THAT(result1, DeclarationsMatcher{expected});
+
+    auto result2 = declarations("");
+    std::vector<Declaration> expected2{};
+    REQUIRE_THAT(result2, DeclarationsMatcher{expected2});
 }
 
 TEST_CASE("selector", "[selector]") {
@@ -128,7 +132,7 @@ TEST_CASE("selector", "[selector]") {
     }
 
     SECTION("multiple selectors") {
-        auto result = selectors("test [foo = bar], a");
+        auto result = selectors("test[foo=bar],a");
 
         auto content1 = AttributeSelector{"test", AttributeSelectorOp::eq, "foo", "bar"};
         auto content2 = TypeSelector{"a"};
@@ -136,5 +140,59 @@ TEST_CASE("selector", "[selector]") {
                                        Selector{Type::TypeSelector, content2}};
 
         REQUIRE_THAT(result, SelectorsMatcher{expected});
+    }
+
+    SECTION("multiple attributes") {
+        auto result = selectors("test [foo=bar], testtest[piyo~=guoo]");
+
+        auto content1 = AttributeSelector{"test", AttributeSelectorOp::eq, "foo", "bar"};
+        auto content2 = AttributeSelector{"testtest", AttributeSelectorOp::Contain, "piyo", "guoo"};
+
+        std::vector<Selector> expected{Selector{Type::AttributeSelector, content1},
+                                       Selector{Type::AttributeSelector, content2}};
+
+        REQUIRE_THAT(result, SelectorsMatcher{expected});
+    }
+}
+
+TEST_CASE("rule", "[rule]") {
+
+    SECTION("empty declarations") {
+        auto result = parse_rule("test [foo=bar] {}");
+
+        auto content1 = AttributeSelector{"test", AttributeSelectorOp::eq, "foo", "bar"};
+        std::vector<Selector> selecs{Selector{Type::AttributeSelector, content1}};
+        std::vector<Declaration> decls{};
+
+        REQUIRE_THAT(result.selectors, SelectorsMatcher{selecs});
+        REQUIRE_THAT(result.declarations, DeclarationsMatcher{decls});
+    }
+
+    SECTION("multiple selectors") {
+        auto result = parse_rule("test [foo=bar], testtest[piyo~=guoo] {}");
+
+        auto content1 = AttributeSelector{"test", AttributeSelectorOp::eq, "foo", "bar"};
+        auto content2 = AttributeSelector{"testtest", AttributeSelectorOp::Contain, "piyo", "guoo"};
+
+        std::vector<Selector> selecs{Selector{Type::AttributeSelector, content1},
+                                     Selector{Type::AttributeSelector, content2}};
+
+        std::vector<Declaration> decls{};
+
+        REQUIRE_THAT(result.selectors, SelectorsMatcher{selecs});
+        REQUIRE_THAT(result.declarations, DeclarationsMatcher{decls});
+    }
+
+    SECTION("selecs and decls") {
+        auto result = parse_rule("test [foo=bar] { aa: bb; cc: dd; }");
+
+        auto content = AttributeSelector{"test", AttributeSelectorOp::eq, "foo", "bar"};
+
+        std::vector<Selector> selecs{Selector{Type::AttributeSelector, content}};
+
+        std::vector<Declaration> decls{Declaration{"aa", "bb"}, Declaration{"cc", "dd"}};
+
+        REQUIRE_THAT(result.selectors, SelectorsMatcher{selecs});
+        REQUIRE_THAT(result.declarations, DeclarationsMatcher{decls});
     }
 }
