@@ -94,22 +94,51 @@ struct SelectorsMatcher : Catch::Matchers::MatcherGenericBase {
     }
 
     std::string describe() const override {
-        return "declarations are equal";
+        return "Selectors are equal";
     }
 
   private:
     const std::vector<Selector> &expected_;
 };
 
+struct RulesMatcher : Catch::Matchers::MatcherGenericBase {
+    RulesMatcher(const std::vector<CSSRule> &expected) : expected_{expected} {}
+
+    bool match(const std::vector<CSSRule> &actual) const {
+
+        if (actual.size() != expected_.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < actual.size(); i++) {
+            SelectorsMatcher selectorsMatcher{expected_[i].selectors};
+            DeclarationsMatcher declMatcher{expected_[i].declarations};
+
+            if (!selectorsMatcher.match(actual[i].selectors) ||
+                !declMatcher.match(actual[i].declarations))
+                return false;
+        }
+
+        return true;
+    }
+
+    std::string describe() const override {
+        return "Rules are equal";
+    }
+
+  private:
+    const std::vector<CSSRule> &expected_;
+};
+
 /////////////  TEST_CASE   /////////////////
 
 TEST_CASE("declarations", "[declarations]") {
 
-    auto result1 = declarations("foo : bar; piyo : piyopiyo;");
+    auto result1 = parse_declarations("foo : bar; piyo : piyopiyo;");
     std::vector<Declaration> expected{Declaration{"foo", "bar"}, Declaration{"piyo", "piyopiyo"}};
     REQUIRE_THAT(result1, DeclarationsMatcher{expected});
 
-    auto result2 = declarations("");
+    auto result2 = parse_declarations("");
     std::vector<Declaration> expected2{};
     REQUIRE_THAT(result2, DeclarationsMatcher{expected2});
 }
@@ -117,14 +146,14 @@ TEST_CASE("declarations", "[declarations]") {
 TEST_CASE("selector", "[selector]") {
 
     SECTION("universal selector") {
-        auto result = selectors("*");
+        auto result = parse_selectors("*");
         std::vector<Selector> expected{Selector{Type::UniversalSelector, UniversalSelector{}}};
 
         REQUIRE_THAT(result, SelectorsMatcher{expected});
     }
 
     SECTION("class selector") {
-        auto result = selectors(".test");
+        auto result = parse_selectors(".test");
 
         std::vector<Selector> expected{Selector{Type::ClassSelector, ClassSelector{"test"}}};
 
@@ -132,7 +161,7 @@ TEST_CASE("selector", "[selector]") {
     }
 
     SECTION("multiple selectors") {
-        auto result = selectors("test[foo=bar],a");
+        auto result = parse_selectors("test[foo=bar],a");
 
         auto content1 = AttributeSelector{"test", AttributeSelectorOp::eq, "foo", "bar"};
         auto content2 = TypeSelector{"a"};
@@ -143,7 +172,7 @@ TEST_CASE("selector", "[selector]") {
     }
 
     SECTION("multiple attributes") {
-        auto result = selectors("test [foo=bar], testtest[piyo~=guoo]");
+        auto result = parse_selectors("test [foo=bar], testtest[piyo~=guoo]");
 
         auto content1 = AttributeSelector{"test", AttributeSelectorOp::eq, "foo", "bar"};
         auto content2 = AttributeSelector{"testtest", AttributeSelectorOp::Contain, "piyo", "guoo"};
@@ -155,7 +184,7 @@ TEST_CASE("selector", "[selector]") {
     }
 }
 
-TEST_CASE("rule", "[rule]") {
+TEST_CASE("parse_rule", "[rule]") {
 
     SECTION("empty declarations") {
         auto result = parse_rule("test [foo=bar] {}");
@@ -194,5 +223,40 @@ TEST_CASE("rule", "[rule]") {
 
         REQUIRE_THAT(result.selectors, SelectorsMatcher{selecs});
         REQUIRE_THAT(result.declarations, DeclarationsMatcher{decls});
+    }
+}
+
+TEST_CASE("parse_rules", "[rule]") {
+
+    SECTION("single rule") {
+        auto result = parse("test [foo=bar] { aa: bb; cc: dd; }");
+
+        auto content1 = AttributeSelector{"test", AttributeSelectorOp::eq, "foo", "bar"};
+        std::vector<Selector> selecs1{Selector{Type::AttributeSelector, content1}};
+        std::vector<Declaration> decls1{Declaration{"aa", "bb"}, Declaration{"cc", "dd"}};
+        CSSRule rule1{selecs1, decls1};
+
+        std::vector<CSSRule> expected{rule1};
+
+        REQUIRE_THAT(result, RulesMatcher{expected});
+    }
+
+    SECTION("multiple rules") {
+        auto result = parse("test [foo=bar] { aa: bb; cc: dd; } \
+	                           test2[piyo = piyopiyo] { ee: ff; gg: hh; }");
+
+        auto content1 = AttributeSelector{"test", AttributeSelectorOp::eq, "foo", "bar"};
+        std::vector<Selector> selecs1{Selector{Type::AttributeSelector, content1}};
+        std::vector<Declaration> decls1{Declaration{"aa", "bb"}, Declaration{"cc", "dd"}};
+        CSSRule rule1{selecs1, decls1};
+
+        auto content2 = AttributeSelector{"test2", AttributeSelectorOp::eq, "piyo", "piyopiyo"};
+        std::vector<Selector> selecs2{Selector{Type::AttributeSelector, content2}};
+        std::vector<Declaration> decls2{Declaration{"ee", "ff"}, Declaration{"gg", "hh"}};
+        CSSRule rule2{selecs2, decls2};
+
+        std::vector<CSSRule> expected{rule1, rule2};
+
+        REQUIRE_THAT(result, RulesMatcher{expected});
     }
 }
