@@ -64,10 +64,14 @@ Selector cap_type(std::string s);
 
 Selector cap_attr(std::string s1, std::string s2, std::string s3, std::string s4);
 
-std::vector<Declaration> declarations(std::string input);
+CSSRule cap_CSSRule(std::string s1);
 
-std::vector<Selector> selectors(std::string input);
+std::vector<Declaration> parse_declarations(std::string input);
+
+std::vector<Selector> parse_selectors(std::string input);
 
 CSSRule parse_rule(std::string input);
+
+std::vector<CSSRule> parse(std::string input);
 
 } // namespace css

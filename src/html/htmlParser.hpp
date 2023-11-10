@@ -30,14 +30,14 @@ std::tuple<std::string, std::string> parse_attribute(std::string input);
 
 AttrMap parse_attributes(std::string input);
 
-std::tuple<std::string, AttrMap> open_tag(std::string::iterator &begin, std::string::iterator &end);
+std::tuple<std::string, AttrMap> parse_open_tag(std::string::iterator &begin,
+                                                std::string::iterator &end);
 
-std::string close_tag(std::string::iterator &begin, std::string::iterator &end);
+std::string parse_close_tag(std::string::iterator &begin, std::string::iterator &end);
 
 std::string parse_text(std::string::iterator &begin, std::string::iterator &end);
 
-Element parse_element(std::string::iterator &begin, std::string::iterator &end);
+std::vector<Node> parse_node(std::string::iterator &begin, std::string::iterator &end);
 
-std::vector<Node> nodes(std::string::iterator &begin, std::string::iterator &end);
-
+Element parse(std::string::iterator &begin, std::string::iterator &end);
 } // namespace html

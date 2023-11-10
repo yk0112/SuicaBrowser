@@ -151,7 +151,7 @@ TEST_CASE("open_tag", "[tag]") {
         std::string str = "<p>aaaaaa";
         auto begin = str.begin();
         auto end = str.end();
-        auto result = html::open_tag(begin, end);
+        auto result = html::parse_open_tag(begin, end);
         std::unordered_map<std::string, std::string> expected{};
         REQUIRE(std::get<0>(result) == "p");
         REQUIRE_THAT(std::get<1>(result), UnorderdMapEquals(expected));
@@ -163,7 +163,7 @@ TEST_CASE("open_tag", "[tag]") {
         auto begin = str.begin();
         auto end = str.end();
 
-        auto result = html::open_tag(begin, end);
+        auto result = html::parse_open_tag(begin, end);
         std::unordered_map<std::string, std::string> expected{{"id", "test"}};
         REQUIRE(std::get<0>(result) == "p");
         REQUIRE_THAT(std::get<1>(result), UnorderdMapEquals(expected));
@@ -174,7 +174,7 @@ TEST_CASE("open_tag", "[tag]") {
         auto begin = str.begin();
         auto end = str.end();
 
-        auto result = html::open_tag(begin, end);
+        auto result = html::parse_open_tag(begin, end);
         std::unordered_map<std::string, std::string> expected{{"id", "test"}, {"class", "sample"}};
         REQUIRE(std::get<0>(result) == "p");
         REQUIRE_THAT(std::get<1>(result), UnorderdMapEquals(expected));
@@ -184,7 +184,7 @@ TEST_CASE("open_tag", "[tag]") {
         auto begin = str.begin();
         auto end = str.end();
 
-        auto result = html::open_tag(begin, end);
+        auto result = html::parse_open_tag(begin, end);
         std::unordered_map<std::string, std::string> expected{{"id", "test"}};
         REQUIRE(std::get<0>(result) == "div");
         REQUIRE_THAT(std::get<1>(result), UnorderdMapEquals(expected));
@@ -194,14 +194,14 @@ TEST_CASE("open_tag", "[tag]") {
         std::string str = "<p id>";
         auto begin = str.begin();
         auto end = str.end();
-        REQUIRE_THROWS(html::open_tag(begin, end));
+        REQUIRE_THROWS(html::parse_open_tag(begin, end));
     }
 
     SECTION("invalid tag") {
         std::string str = "</p>";
         auto begin = str.begin();
         auto end = str.end();
-        REQUIRE_THROWS(html::open_tag(begin, end));
+        REQUIRE_THROWS(html::parse_open_tag(begin, end));
     }
 }
 
@@ -209,7 +209,7 @@ TEST_CASE("close_tag", "[tag]") {
     std::string str = "</p>";
     auto begin = str.begin();
     auto end = str.end();
-    auto result = html::close_tag(begin, end);
+    auto result = html::parse_close_tag(begin, end);
 
     REQUIRE(result == "p");
 }
@@ -224,7 +224,7 @@ TEST_CASE("parse_text", "[tag]") {
     std::string str2 = "</p>";
     begin = str2.begin();
     end = str2.end();
-    REQUIRE_THROWS(html::parse_text(begin, end));
+    REQUIRE(html::parse_text(begin, end) == "");
 }
 
 TEST_CASE("parse_element", "[element]") {
@@ -236,7 +236,7 @@ TEST_CASE("parse_element", "[element]") {
         html::AttrMap attributes{};
         std::vector<html::Node> children{html::Node{}};
         html::Element expected{"p", attributes, children};
-        auto result = html::parse_element(begin, end);
+        auto result = html::parse(begin, end);
         REQUIRE_THAT(result, Elementquals(expected));
     }
     SECTION("ement with text") {
@@ -247,7 +247,7 @@ TEST_CASE("parse_element", "[element]") {
         html::AttrMap attributes{};
         std::vector<html::Node> children{html::Node{"hello world"}};
         html::Element expected{"p", attributes, children};
-        auto result = html::parse_element(begin, end);
+        auto result = html::parse(begin, end);
         REQUIRE_THAT(result, Elementquals(expected));
     }
     SECTION("nested elements") {
@@ -263,7 +263,7 @@ TEST_CASE("parse_element", "[element]") {
         std::vector<html::Node> children2{html::Node{childElement}};
         html::Element expected{"div", attributes2, children2};
 
-        auto result = html::parse_element(begin, end);
+        auto result = html::parse(begin, end);
         REQUIRE_THAT(result, Elementquals(expected));
     }
 
@@ -272,6 +272,6 @@ TEST_CASE("parse_element", "[element]") {
           std::string input = "<p>hello world</div>";
           auto begin = input.begin();
           auto end = input.end();
-          REQUIRE_THROWS(html::parse_element(begin, end));
+          REQUIRE_THROWS(html::parse(begin, end));
       } */
 }
