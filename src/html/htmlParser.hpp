@@ -9,10 +9,6 @@ namespace html {
 
 using AttrMap = std::unordered_map<std::string, std::string>;
 
-struct Text {
-    std::string data;
-};
-
 struct Element;
 
 using Node = std::variant<std::string, Element>;
@@ -40,4 +36,5 @@ std::string parse_text(std::string::iterator &begin, std::string::iterator &end)
 std::vector<Node> parse_node(std::string::iterator &begin, std::string::iterator &end);
 
 Element parse(std::string::iterator &begin, std::string::iterator &end);
+
 } // namespace html

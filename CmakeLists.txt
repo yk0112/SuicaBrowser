@@ -7,8 +7,8 @@ set(CMAKE_CXX_STANDARD 20)
 find_package(Boost 1.81.0 REQUIRED COMPONENTS headers)
 find_package(Catch2 3 REQUIRED)
 
-# add_library(htmlParser STATIC ./src/html/htmlParser.cpp)
-# target_link_libraries(htmlParser PRIVATE Boost::headers)
+add_library(htmlParser STATIC ./src/html/htmlParser.cpp)
+target_link_libraries(htmlParser PRIVATE Boost::headers)
 
 add_library(cssParser STATIC ./src/css/cssParser.cpp)
 target_link_libraries(cssParser PRIVATE Boost::headers)
@@ -16,6 +16,12 @@ target_link_libraries(cssParser PRIVATE Boost::headers)
 #add_executable(htmltest ./unit_test/html/test.cpp)
 #target_link_libraries(htmltest PRIVATE htmlParser Catch2::Catch2WithMain)
 
-add_executable(csstest ./unit_test/css/test.cpp)
-target_link_libraries(csstest PRIVATE cssParser Catch2::Catch2WithMain)
+#add_executable(csstest ./unit_test/css/test.cpp)
+#target_link_libraries(csstest PRIVATE cssParser Catch2::Catch2WithMain)
+
+add_library(layout STATIC ./src/layout/layout.cpp)
+target_link_libraries(layout PRIVATE Boost::headers)
+
+add_executable(layouttest ./unit_test/layout/test.cpp)
+target_link_libraries(layouttest PRIVATE layout Catch2::Catch2WithMain)
 

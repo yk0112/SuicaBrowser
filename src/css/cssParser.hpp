@@ -1,3 +1,4 @@
+// #include "../html/htmlParser.hpp"
 #include <iostream>
 #include <memory>
 #include <string>
@@ -40,6 +41,10 @@ using Content = std::variant<UniversalSelector, TypeSelector, AttributeSelector,
 struct Selector {
     Type type;
     Content content;
+
+    //    bool matches(const html::Node &n) const;
+
+    //    bool AttributeSelector_matches(const html::Element &e) const;
 };
 
 struct Declaration {
@@ -50,6 +55,8 @@ struct Declaration {
 struct CSSRule {
     std::vector<Selector> selectors;
     std::vector<Declaration> declarations;
+
+    //    bool matches(const html::Node &n) const;
 };
 
 struct Stylesheet {

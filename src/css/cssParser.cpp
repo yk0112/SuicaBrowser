@@ -6,6 +6,8 @@ namespace css {
 
 namespace qi = boost::spirit::qi;
 
+//////  CSS rule for parse  //////
+
 using Rule = qi::rule<std::string::iterator, std::string()>;
 using Rule2 = qi::rule<std::string::iterator, Selector()>;
 using Rule3 = qi::rule<std::string::iterator, CSSRule()>;
@@ -65,6 +67,82 @@ Selector cap_attr(std::string s1, std::string s2, std::string s3, std::string s4
 CSSRule cap_CSSRule(std::string s1) {
     return parse_rule(s1);
 };
+
+//////// matchers for rendering tree  //////////
+/* bool CSSRule::matches(const html::Node &n) const {
+    return std::any_of(this->selectors.begin(), this->selectors.end(), [n](const Selector &s) {
+        return s.matches(n);
+    });
+};
+
+bool Selector::AttributeSelector_matches(const html::Element &element) const {
+
+    auto selector = std::get<2>(this->content);
+
+    if (!(selector.tag_name == element.tag_name))
+        return false;
+
+    if (selector.op == AttributeSelectorOp::eq && element.attributes.contains(selector.attribute)) {
+        try {
+            return element.attributes.at(selector.attribute) == selector.value;
+        } catch (const std::out_of_range &) {
+            return false;
+        }
+    }
+
+    if (selector.op == AttributeSelectorOp::Contain &&
+        element.attributes.contains(selector.attribute)) {
+        auto attr = element.attributes.at(selector.attribute);
+        std::vector<std::string> values;
+        auto begin = attr.begin();
+        auto end = attr.end();
+        auto sucsess = qi::parse(begin, end, *qi::char_ % *qi::space, values);
+
+        if (sucsess && begin == end)
+            return std::find(values.begin(), values.end(), selector.value) != values.end();
+        else
+            return false;
+    }
+    return false;
+}
+
+bool Selector::matches(const html::Node &n) const {
+    switch (this->type) {
+
+    case Type::UniversalSelector:
+        return true;
+    case Type::TypeSelector: {
+        auto selector = std::get<1>(this->content);
+        if (std::holds_alternative<html::Element>(n) &&
+            selector.tag_name == std::get<1>(n).tag_name)
+            return true;
+        else
+            return false;
+    }
+    case Type::AttributeSelector: {
+        if (std::holds_alternative<html::Element>(n))
+            return AttributeSelector_matches(std::get<1>(n));
+        else
+            return false;
+    }
+    case Type::ClassSelector: {
+        auto selector = std::get<3>(this->content);
+        if (std::holds_alternative<html::Element>(n)) {
+            auto element = std::get<1>(n);
+            try {
+                return element.attributes.at("class") == selector.class_name;
+            } catch (const std::out_of_range &) {
+                return false;
+            }
+        }
+        return false;
+    }
+    default:
+        return false;
+    }
+};
+ */
+////////parse function //////////////
 
 Declaration parse_declaration(std::string input) {
     auto begin = input.begin();
