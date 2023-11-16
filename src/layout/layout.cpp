@@ -81,4 +81,42 @@ bool AttributeSelector_matches(const html::Element &e, const css::Selector &s) {
     return false;
 };
 
+std::shared_ptr<StyleNode> to_style_node(const html::Node &node,
+                                         const css::Stylesheet &stylesheet) {
+    std::unordered_map<std::string, std::string> properties;
+
+    // Filterling, Cascading (order of appearance only)
+    for (auto &rule : stylesheet.rules) {
+        if (css_matches(node, rule)) {
+            for (auto &declaration : rule.declarations) {
+                properties[declaration.name] = declaration.value;
+            }
+        }
+    }
+
+    // defaulting is skipped
+
+    if (properties.find("display") != properties.end() && properties.at("display") == "none") {
+        return nullptr;
+    }
+
+    html::NodeType nodetype;
+    std::vector<std::shared_ptr<StyleNode>> children;
+
+    if (std::holds_alternative<html::Element>(node)) {
+        for (auto &child : std::get<1>(node).children) {
+            auto styled_child = to_style_node(child, stylesheet);
+            children.push_back(styled_child);
+        }
+        nodetype = html::NodeType::Element;
+    } else
+        nodetype = html::NodeType::Text;
+
+    auto stylenode = std::make_shared<StyleNode>();
+    stylenode->node_type = nodetype;
+    stylenode->properties = properties;
+    stylenode->children = children;
+
+    return stylenode;
+};
 } // namespace layout

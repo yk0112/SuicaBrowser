@@ -11,6 +11,8 @@ using AttrMap = std::unordered_map<std::string, std::string>;
 
 struct Element;
 
+enum class NodeType { Element, Text };
+
 using Node = std::variant<std::string, Element>;
 
 struct Element {
